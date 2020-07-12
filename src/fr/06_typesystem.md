@@ -16,20 +16,20 @@ Les types implémentent le trait `std::ops::Drop` dans le but d'effectuer
 certaines opérations lorsque la mémoire associée à une valeur est réclamée.
 `Drop` est l'équivalent Rust d'un destructeur en C++ ou un finaliseur en Java.
 
-L'action de `Drop` est faite récursivement, depuis la valeur externe vers les
-valeurs imbriquées. Lorsqu'une valeur sort du scope (ou est explicitement
-relâchée avec `std::mem::drop`), elle est relâchée en deux étapes. La première
-étape a lieu uniquement si le type de la valeur en question implémente le trait
-`Drop` et consiste en l'appel de la méthode `drop`. La seconde étape consiste
-en la répétition de processus de *drop* récursivement sur tous les champs
-que contient la valeur. Il est à noter que l'implémentation de `Drop` est
+`Drop` agit récursivement, depuis la valeur externe vers les valeurs imbriquées.
+Lorsqu'une valeur sort du scope (ou est explicitement relâchée avec
+`std::mem::drop`), elle est relâchée en deux étapes. La première étape a lieu
+uniquement si le type de la valeur en question implémente le trait `Drop` et
+consiste en l'appel de la méthode `drop`. La seconde étape consiste en la
+répétition de processus de *drop* récursivement sur tous les champs que contient
+la valeur. Il est à noter que l'implémentation de `Drop` est
 *responsable uniquement de la valeur extérieure*.
 
 Tout d'abord, l'implémentation de `Drop` ne doit pas être systématique. Elle est
 nécessaire uniquement lorsque le type requiert un traitement logique à la
 destruction. `Drop` est typiquement utilisé dans le cas du relâchement des
 ressources externes (connexions réseau, fichier, etc.) ou de ressources mémoire
-complexes (pointeurs intelligents comme les `Box` ou les `Rc` par exemple). Au
+complexes (*smart pointers* comme les `Box` ou les `Rc` par exemple). Au
 final, il est probable que l'implémentation du trait `Drop` contienne des blocs
 `unsafe` ainsi que d'autres opérations critiques du point de vue de la sécurité.
 
@@ -71,30 +71,30 @@ protégés.
 >
 > Certaines opérations liées à la sécurité d'une application à la fin d'un
 > traitement (comme l'effacement de secrets cryptographiques par exemple) ne
-> doivent pas reposer seulement sur l'implémentation du trait `Drop`.
+> doivent pas reposer uniquement sur l'implémentation du trait `Drop`.
 
 ### Les traits `Send` et `Sync`
 
 Les traits `Send` et `Sync` (définis dans `std::marker` ou `core::marker`) sont
 des marqueurs utilisés pour assurer la sûreté des accès concurrents en Rust.
-Lorsque correctement implémentés, ils permettent au compilateur Rust de garantir
-l'absence de problèmes d'accès concurrents. Leur sémantique est définie comme
-suit :
+Lorsqu'ils sont correctement implémentés, ils permettent au compilateur Rust de
+garantir l'absence de problèmes d'accès concurrents. Leurs sémantiques sont
+définies comme suit :
 
-- Un type est `Send` s’il est sûr de l'envoyer (*move*) vers un autre fil
-  d'exécution.
-- Un type est `Sync` s’il est sûr de le partager par une référence immutable
-  avec un autre fil d'exécution.
+- Un type est `Send` s’il est sûr d'envoyer (*move*) des valeurs de ce type vers
+  un autre fil d'exécution.
+- Un type est `Sync` s’il est sûr de partager des valeurs de ce type par une
+  référence immutable avec un autre fil d'exécution.
 
-Ces deux traits sont des *_traits unsafe_*, c'est-à-dire que le compilateur Rust
+Ces deux traits sont des traits *unsafe*, c'est-à-dire que le compilateur Rust
 ne vérifie d'aucune manière que leur implémentation est correcte. Le danger est
 réel : une implémentation incorrecte peut mener à un **comportement indéfini**.
 
 Heureusement, dans la plupart des cas, il n'est pas nécessaire de fournir une
 implémentation. En Rust, la quasi-totalité des types primitifs implémente
-`Send` et `Sync`, et dans la majorité des cas, Rust fournit une implémentation
-de manière automatique pour les types composés. Quelques exceptions notables
-sont :
+`Send` et `Sync`, et dans la majorité des cas, Rust fournit de manière
+automatique une implémentation pour les types composés. Quelques exceptions
+notables sont :
 
 - les pointeurs `raw`, qui n'implémentent ni `Send`, ni `Sync`, puisqu'ils
   n'offrent aucune garantie quant à la sûreté ;
@@ -102,7 +102,7 @@ sont :
   les références `Cell` et `RefCell` non plus), puisqu'elles autorisent la
   mutabilité des valeurs contenues (*interior mutability*) ;
 - les références `Rc`, qui n'implémentent ni `Send`, ni `Sync`, puisque les
-  compteurs de références seraient partagés en désynchronisés.
+  compteurs de références seraient partagés de manière désynchronisée.
 
 L'implémentation automatique de `Send` (respectivement `Sync`) a lieu pour les
 types composés (structures ou énumérations) lorsque tous les champs contenus
@@ -231,7 +231,7 @@ Comme stipulé dans la documentation de la bibliothèque standard, Rust présupp
 
 Le compilateur ne vérifie aucun de ces prérequis, à l'exception des
 vérifications sur les types. Toutefois, les comparaisons sont des éléments
-critiques puisqu'elles jouent un rôle tant dans les propriétés de vivacité
+importants puisqu'elles jouent un rôle tant dans les propriétés de vivacité
 des systèmes critiques comme des ordonnanceurs ou des répartiteurs de charge
 que dans les algorithmes optimisés qui peuvent éventuellement utiliser des
 blocs `unsafe`. Dans le premier cas d'usage, une mauvaise relation d'ordre
@@ -306,7 +306,7 @@ assert!(T1 { a: 1, b: 1 } > T1 { a: 1, b: 0 });
 > `T2 {a: 1, b: 0} < T2 {a: 0, b: 1}`.
 >
 > Ensuite, si une comparaison sous-jacente provoque un `panic`, l'ordre peut
-> changer le résultat à cause de l'utilisation d'un opérateur logique court
+> changer le résultat à cause de l'utilisation d'un opérateur logique court-
 > circuitant dans l'implémentation automatique.
 >
 > Pour les énumérations, les comparaisons dérivées dépendent d'abord de
@@ -314,9 +314,9 @@ assert!(T1 { a: 1, b: 1 } > T1 { a: 1, b: 0 });
 
 En dépit de ces avertissements sur les ordres dérivés, les comparaisons dérivées
 automatiquement sont bien moins sujettes à erreurs que des implémentations
-manuelles, et rendent le code plus court et plus simple à maintenir :
+manuelles, et rendent le code plus court et plus simple à maintenir.
 
-> ### Recommandation {{#check LANG-CMP-DERIVE | Dérivation des traits de comparaisons lorsque c'est possible}}
+> ### Recommandation {{#check LANG-CMP-DERIVE | Dérivation des traits de comparaison lorsque c'est possible}}
 >
 > Dans un développement sécurisé en Rust, l'implémentation des traits de
 > comparaison standard doit être automatiquement dérivée à l'aide de
